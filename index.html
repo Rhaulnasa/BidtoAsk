@@ -1,0 +1,758 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>BID/ASK - Cutting Through The Noise</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@400;500;600;700&family=Orbitron:wght@700;900&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bid-green: #7FB069;
+            --ask-orange: #E76F51;
+            --dark-bg: #0A0E12;
+            --card-bg: #131921;
+            --text-primary: #E8EAED;
+            --text-secondary: #9AA0A6;
+            --accent-glow: rgba(127, 176, 105, 0.3);
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Rajdhani', sans-serif;
+            background: var(--dark-bg);
+            color: var(--text-primary);
+            line-height: 1.6;
+            overflow-x: hidden;
+        }
+
+        /* Animated background grid */
+        .grid-background {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-image: 
+                linear-gradient(rgba(127, 176, 105, 0.03) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(231, 111, 81, 0.03) 1px, transparent 1px);
+            background-size: 50px 50px;
+            pointer-events: none;
+            z-index: 0;
+            animation: gridPulse 8s ease-in-out infinite;
+        }
+
+        @keyframes gridPulse {
+            0%, 100% { opacity: 0.3; }
+            50% { opacity: 0.6; }
+        }
+
+        /* Navigation */
+        nav {
+            position: fixed;
+            top: 0;
+            width: 100%;
+            background: rgba(10, 14, 18, 0.95);
+            backdrop-filter: blur(10px);
+            border-bottom: 1px solid rgba(127, 176, 105, 0.2);
+            z-index: 1000;
+            padding: 1rem 0;
+        }
+
+        .nav-container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 0 2rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .logo {
+            font-family: 'Orbitron', sans-serif;
+            font-size: 1.8rem;
+            font-weight: 900;
+            letter-spacing: -1px;
+        }
+
+        .logo .bid {
+            color: var(--bid-green);
+            text-shadow: 0 0 20px var(--accent-glow);
+        }
+
+        .logo .slash {
+            color: var(--text-primary);
+        }
+
+        .logo .ask {
+            color: var(--ask-orange);
+            text-shadow: 0 0 20px rgba(231, 111, 81, 0.3);
+        }
+
+        .nav-links {
+            display: flex;
+            gap: 2.5rem;
+            list-style: none;
+        }
+
+        .nav-links a {
+            color: var(--text-secondary);
+            text-decoration: none;
+            font-weight: 600;
+            font-size: 1rem;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            transition: all 0.3s;
+            position: relative;
+        }
+
+        .nav-links a:hover {
+            color: var(--bid-green);
+        }
+
+        .nav-links a::after {
+            content: '';
+            position: absolute;
+            bottom: -5px;
+            left: 0;
+            width: 0;
+            height: 2px;
+            background: linear-gradient(90deg, var(--bid-green), var(--ask-orange));
+            transition: width 0.3s;
+        }
+
+        .nav-links a:hover::after {
+            width: 100%;
+        }
+
+        /* Hero Section */
+        .hero {
+            position: relative;
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 8rem 2rem 4rem;
+            overflow: hidden;
+        }
+
+        .hero-content {
+            max-width: 1400px;
+            width: 100%;
+            position: relative;
+            z-index: 1;
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 4rem;
+            align-items: center;
+        }
+
+        .hero-text {
+            animation: slideInLeft 1s ease-out;
+        }
+
+        @keyframes slideInLeft {
+            from {
+                opacity: 0;
+                transform: translateX(-50px);
+            }
+            to {
+                opacity: 1;
+                transform: translateX(0);
+            }
+        }
+
+        .hero-logo-img {
+            width: 100%;
+            max-width: 600px;
+            animation: slideInRight 1s ease-out;
+            filter: drop-shadow(0 0 30px rgba(127, 176, 105, 0.4));
+        }
+
+        @keyframes slideInRight {
+            from {
+                opacity: 0;
+                transform: translateX(50px);
+            }
+            to {
+                opacity: 1;
+                transform: translateX(0);
+            }
+        }
+
+        .hero h1 {
+            font-family: 'Orbitron', sans-serif;
+            font-size: 4.5rem;
+            font-weight: 900;
+            line-height: 1.1;
+            margin-bottom: 1.5rem;
+            background: linear-gradient(135deg, var(--bid-green), var(--ask-orange));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            animation: textGlow 3s ease-in-out infinite;
+        }
+
+        @keyframes textGlow {
+            0%, 100% {
+                filter: brightness(1);
+            }
+            50% {
+                filter: brightness(1.3);
+            }
+        }
+
+        .hero .tagline {
+            font-size: 1.8rem;
+            font-weight: 600;
+            color: var(--text-primary);
+            margin-bottom: 2rem;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+        }
+
+        .hero p {
+            font-size: 1.3rem;
+            color: var(--text-secondary);
+            margin-bottom: 2.5rem;
+            line-height: 1.8;
+            max-width: 600px;
+        }
+
+        .cta-button {
+            display: inline-block;
+            padding: 1.2rem 3rem;
+            background: linear-gradient(135deg, var(--bid-green), var(--ask-orange));
+            color: var(--dark-bg);
+            font-size: 1.2rem;
+            font-weight: 700;
+            text-decoration: none;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            border-radius: 4px;
+            transition: all 0.3s;
+            position: relative;
+            overflow: hidden;
+            box-shadow: 0 10px 30px rgba(127, 176, 105, 0.4);
+        }
+
+        .cta-button:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 15px 40px rgba(127, 176, 105, 0.6);
+        }
+
+        .cta-button::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: rgba(255, 255, 255, 0.3);
+            transition: left 0.5s;
+        }
+
+        .cta-button:hover::before {
+            left: 100%;
+        }
+
+        /* Focus Areas */
+        .focus-section {
+            position: relative;
+            padding: 6rem 2rem;
+            background: linear-gradient(180deg, var(--dark-bg), var(--card-bg));
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+
+        .section-title {
+            font-family: 'Orbitron', sans-serif;
+            font-size: 3rem;
+            font-weight: 900;
+            text-align: center;
+            margin-bottom: 1rem;
+            background: linear-gradient(135deg, var(--bid-green), var(--ask-orange));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .section-subtitle {
+            text-align: center;
+            font-size: 1.3rem;
+            color: var(--text-secondary);
+            margin-bottom: 4rem;
+            text-transform: uppercase;
+            letter-spacing: 3px;
+        }
+
+        .focus-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+            gap: 2.5rem;
+            margin-bottom: 4rem;
+        }
+
+        .focus-card {
+            background: var(--card-bg);
+            border: 1px solid rgba(127, 176, 105, 0.2);
+            border-radius: 8px;
+            padding: 2.5rem;
+            transition: all 0.4s;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .focus-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 3px;
+            background: linear-gradient(90deg, var(--bid-green), var(--ask-orange));
+            transform: scaleX(0);
+            transition: transform 0.4s;
+        }
+
+        .focus-card:hover {
+            transform: translateY(-10px);
+            border-color: var(--bid-green);
+            box-shadow: 0 20px 50px rgba(127, 176, 105, 0.3);
+        }
+
+        .focus-card:hover::before {
+            transform: scaleX(1);
+        }
+
+        .focus-card h3 {
+            font-family: 'Orbitron', sans-serif;
+            font-size: 1.8rem;
+            font-weight: 700;
+            margin-bottom: 1rem;
+            color: var(--bid-green);
+        }
+
+        .focus-card p {
+            font-size: 1.1rem;
+            color: var(--text-secondary);
+            line-height: 1.7;
+        }
+
+        /* Episodes Section */
+        .episodes-section {
+            padding: 6rem 2rem;
+            background: var(--dark-bg);
+        }
+
+        .episode-card {
+            background: var(--card-bg);
+            border: 1px solid rgba(231, 111, 81, 0.2);
+            border-radius: 8px;
+            padding: 2rem;
+            margin-bottom: 2rem;
+            transition: all 0.4s;
+            position: relative;
+        }
+
+        .episode-card:hover {
+            border-color: var(--ask-orange);
+            transform: translateX(10px);
+            box-shadow: 0 10px 40px rgba(231, 111, 81, 0.3);
+        }
+
+        .episode-meta {
+            display: flex;
+            gap: 1.5rem;
+            margin-bottom: 1rem;
+            font-size: 0.9rem;
+            color: var(--text-secondary);
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .episode-number {
+            color: var(--bid-green);
+            font-weight: 700;
+        }
+
+        .episode-card h3 {
+            font-size: 1.6rem;
+            font-weight: 700;
+            margin-bottom: 1rem;
+            color: var(--text-primary);
+        }
+
+        .episode-card p {
+            color: var(--text-secondary);
+            line-height: 1.7;
+            margin-bottom: 1.5rem;
+        }
+
+        .listen-button {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.8rem 1.5rem;
+            background: transparent;
+            border: 2px solid var(--ask-orange);
+            color: var(--ask-orange);
+            font-weight: 700;
+            text-transform: uppercase;
+            font-size: 0.9rem;
+            letter-spacing: 1px;
+            border-radius: 4px;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .listen-button:hover {
+            background: var(--ask-orange);
+            color: var(--dark-bg);
+        }
+
+        /* Newsletter Section */
+        .newsletter-section {
+            padding: 6rem 2rem;
+            background: linear-gradient(135deg, rgba(127, 176, 105, 0.1), rgba(231, 111, 81, 0.1));
+            text-align: center;
+        }
+
+        .newsletter-box {
+            max-width: 700px;
+            margin: 0 auto;
+            background: var(--card-bg);
+            padding: 3rem;
+            border-radius: 12px;
+            border: 2px solid var(--bid-green);
+            box-shadow: 0 20px 60px rgba(127, 176, 105, 0.3);
+        }
+
+        .newsletter-box h2 {
+            font-family: 'Orbitron', sans-serif;
+            font-size: 2.5rem;
+            margin-bottom: 1rem;
+            color: var(--bid-green);
+        }
+
+        .newsletter-box p {
+            font-size: 1.2rem;
+            color: var(--text-secondary);
+            margin-bottom: 2rem;
+        }
+
+        .email-form {
+            display: flex;
+            gap: 1rem;
+            max-width: 500px;
+            margin: 0 auto;
+        }
+
+        .email-input {
+            flex: 1;
+            padding: 1rem 1.5rem;
+            background: var(--dark-bg);
+            border: 2px solid rgba(127, 176, 105, 0.3);
+            border-radius: 4px;
+            color: var(--text-primary);
+            font-size: 1rem;
+            font-family: 'Rajdhani', sans-serif;
+            transition: all 0.3s;
+        }
+
+        .email-input:focus {
+            outline: none;
+            border-color: var(--bid-green);
+            box-shadow: 0 0 20px var(--accent-glow);
+        }
+
+        .email-submit {
+            padding: 1rem 2rem;
+            background: var(--bid-green);
+            color: var(--dark-bg);
+            border: none;
+            border-radius: 4px;
+            font-size: 1rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            cursor: pointer;
+            transition: all 0.3s;
+            font-family: 'Rajdhani', sans-serif;
+        }
+
+        .email-submit:hover {
+            background: var(--ask-orange);
+            transform: scale(1.05);
+        }
+
+        /* Footer */
+        footer {
+            padding: 3rem 2rem;
+            background: var(--card-bg);
+            border-top: 1px solid rgba(127, 176, 105, 0.2);
+            text-align: center;
+        }
+
+        footer p {
+            color: var(--text-secondary);
+            font-size: 1rem;
+        }
+
+        .footer-links {
+            display: flex;
+            gap: 2rem;
+            justify-content: center;
+            margin-bottom: 1.5rem;
+        }
+
+        .footer-links a {
+            color: var(--text-secondary);
+            text-decoration: none;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            transition: color 0.3s;
+        }
+
+        .footer-links a:hover {
+            color: var(--bid-green);
+        }
+
+        /* Mobile Menu */
+        .mobile-menu-btn {
+            display: none;
+            background: none;
+            border: none;
+            color: var(--text-primary);
+            font-size: 1.5rem;
+            cursor: pointer;
+        }
+
+        /* Responsive */
+        @media (max-width: 968px) {
+            .hero-content {
+                grid-template-columns: 1fr;
+                text-align: center;
+            }
+
+            .hero-logo-img {
+                order: -1;
+            }
+
+            .hero h1 {
+                font-size: 3rem;
+            }
+
+            .hero .tagline {
+                font-size: 1.4rem;
+            }
+
+            .hero p {
+                margin-left: auto;
+                margin-right: auto;
+            }
+
+            .nav-links {
+                display: none;
+            }
+
+            .mobile-menu-btn {
+                display: block;
+            }
+
+            .focus-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .email-form {
+                flex-direction: column;
+            }
+
+            .section-title {
+                font-size: 2.2rem;
+            }
+        }
+
+        @media (max-width: 640px) {
+            .hero h1 {
+                font-size: 2.2rem;
+            }
+
+            .logo {
+                font-size: 1.4rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="grid-background"></div>
+
+    <!-- Navigation -->
+    <nav>
+        <div class="nav-container">
+            <div class="logo">
+                <span class="bid">BID</span><span class="slash">/</span><span class="ask">ASK</span>
+            </div>
+            <ul class="nav-links">
+                <li><a href="#home">Home</a></li>
+                <li><a href="#focus">Focus</a></li>
+                <li><a href="#episodes">Episodes</a></li>
+                <li><a href="#subscribe">Subscribe</a></li>
+            </ul>
+            <button class="mobile-menu-btn">☰</button>
+        </div>
+    </nav>
+
+    <!-- Hero Section -->
+    <section id="home" class="hero">
+        <div class="hero-content">
+            <div class="hero-text">
+                <h1>Markets Don't Care About Your Feelings</h1>
+                <p class="tagline">Price • Policy • Pressure</p>
+                <p>
+                    <strong>BID/ASK</strong> cuts through the narrative and focuses on what matters. We break down the macro forces behind the headlines—central bank moves, liquidity shifts, volatility triggers—and translate them into actionable market context.
+                </p>
+                <p>
+                    This isn't your grandfather's financial news. It's <strong>alpha in audio form</strong>. Daily drops for those who trade the reality, not the hype.
+                </p>
+                <a href="#subscribe" class="cta-button">Get Daily Drops</a>
+            </div>
+            <img src="/mnt/user-data/uploads/image__1_.jpg" alt="BID/ASK Logo" class="hero-logo-img">
+        </div>
+    </section>
+
+    <!-- Focus Areas Section -->
+    <section id="focus" class="focus-section">
+        <div class="container">
+            <h2 class="section-title">What We Cover</h2>
+            <p class="section-subtitle">The Forces That Move Markets</p>
+            
+            <div class="focus-grid">
+                <div class="focus-card">
+                    <h3>Central Banks</h3>
+                    <p>Fed moves, ECB policy, BOJ interventions. We decode the language and track the liquidity. When Powell speaks, we tell you what it actually means for your positions.</p>
+                </div>
+                
+                <div class="focus-card">
+                    <h3>Liquidity Shifts</h3>
+                    <p>Money flow dictates everything. We monitor reverse repo operations, treasury auctions, QT/QE dynamics, and institutional positioning to identify where capital is really moving.</p>
+                </div>
+                
+                <div class="focus-card">
+                    <h3>Volatility Triggers</h3>
+                    <p>Gamma exposure, options expiration, correlation breakdowns. We identify the pressure points before they blow—giving you the context to position accordingly.</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Episodes Section -->
+    <section id="episodes" class="episodes-section">
+        <div class="container">
+            <h2 class="section-title">Latest Episodes</h2>
+            <p class="section-subtitle">Unfiltered Truth. Daily.</p>
+            
+            <div class="episode-card">
+                <div class="episode-meta">
+                    <span class="episode-number">EP 001</span>
+                    <span>JAN 30, 2026</span>
+                    <span>18 MIN</span>
+                </div>
+                <h3>The Fed's Liquidity Trap: Why Rate Cuts Won't Save You</h3>
+                <p>
+                    Everyone's celebrating potential rate cuts, but they're missing the bigger picture. We break down why the Fed's balance sheet runoff is creating a liquidity vacuum that rate policy can't fix—and what it means for equity multiples heading into Q2.
+                </p>
+                <button class="listen-button">▶ LISTEN NOW</button>
+            </div>
+
+            <div class="episode-card">
+                <div class="episode-meta">
+                    <span class="episode-number">EP 002</span>
+                    <span>JAN 29, 2026</span>
+                    <span>22 MIN</span>
+                </div>
+                <h3>Volatility Regime Change: The VIX Isn't Telling You Everything</h3>
+                <p>
+                    The VIX is quiet, but correlation is breaking down across sectors. We examine what realized vol vs implied vol divergence means for hedging strategies, and why gamma exposure at 4200 could create a violent move in either direction.
+                </p>
+                <button class="listen-button">▶ LISTEN NOW</button>
+            </div>
+
+            <div class="episode-card">
+                <div class="episode-meta">
+                    <span class="episode-number">EP 003</span>
+                    <span>JAN 28, 2026</span>
+                    <span>20 MIN</span>
+                </div>
+                <h3>Treasury Auctions & Dollar Liquidity: Reading the Tea Leaves</h3>
+                <p>
+                    This week's treasury auctions revealed something critical about foreign demand for US debt. We connect the dots between bid-to-cover ratios, dollar swap lines, and what it means for risk assets when the world's reserve currency starts showing cracks.
+                </p>
+                <button class="listen-button">▶ LISTEN NOW</button>
+            </div>
+        </div>
+    </section>
+
+    <!-- Newsletter Section -->
+    <section id="subscribe" class="newsletter-section">
+        <div class="newsletter-box">
+            <h2>Subscribe to Daily Drops</h2>
+            <p>Get actionable market intelligence delivered straight to your inbox. No fluff. No narrative. Just alpha.</p>
+            <form class="email-form">
+                <input type="email" class="email-input" placeholder="your@email.com" required>
+                <button type="submit" class="email-submit">Subscribe</button>
+            </form>
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <footer>
+        <div class="footer-links">
+            <a href="#home">Home</a>
+            <a href="#focus">Focus</a>
+            <a href="#episodes">Episodes</a>
+            <a href="#subscribe">Subscribe</a>
+        </div>
+        <p>&copy; 2026 BID/ASK. All rights reserved. Trade responsibly.</p>
+    </footer>
+
+    <script>
+        // Smooth scrolling
+        document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+            anchor.addEventListener('click', function (e) {
+                e.preventDefault();
+                const target = document.querySelector(this.getAttribute('href'));
+                if (target) {
+                    target.scrollIntoView({
+                        behavior: 'smooth',
+                        block: 'start'
+                    });
+                }
+            });
+        });
+
+        // Newsletter form
+        document.querySelector('.email-form').addEventListener('submit', function(e) {
+            e.preventDefault();
+            alert('Thanks for subscribing! You\'ll receive daily market intelligence straight to your inbox.');
+            this.reset();
+        });
+
+        // Mobile menu toggle
+        document.querySelector('.mobile-menu-btn').addEventListener('click', function() {
+            const navLinks = document.querySelector('.nav-links');
+            navLinks.style.display = navLinks.style.display === 'flex' ? 'none' : 'flex';
+        });
+    </script>
+</body>
+</html>
